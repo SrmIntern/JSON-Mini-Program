@@ -187,7 +187,7 @@ namespace JSON_Mini_Program
 
             if (string.IsNullOrEmpty(input))
             {
-                return null;
+                return null; //asdf
             }
 
             return input;

@@ -239,8 +239,8 @@ namespace JSON_Mini_Program
 
             string jsonText = JsonConvert.SerializeXmlNode(xmlDoc, Newtonsoft.Json.Formatting.Indented); // convert xml to json with indented formatting
 
-            jsonText = jsonText.Replace("@description", "description") 
-                .Replace("#text", "text");
+            //jsonText = jsonText.Replace("@description", "description") 
+            //    .Replace("#text", "text");
 
             return jsonText;
         }

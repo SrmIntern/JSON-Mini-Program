@@ -66,7 +66,7 @@ namespace JSON_Mini_Program
                         foreach (var item in kvp.Value.EnumerateArray())
                         {
                             // if the one of the array item's value is an object, need further deserialization (since it is a nested JSON)
-                            if (item.ValueKind == JsonValueKind.Object) 
+                            if (item.ValueKind == JsonValueKind.Object)
                             {
                                 var arrNested = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(item);
                                 result.AppendLine("");
@@ -121,7 +121,7 @@ namespace JSON_Mini_Program
 
             // convert each textboxes into a key-value pair which is Dictionary
             // left side key, right side value
-            AddToDictionary(dataDictionary, key1.Text, DetermineValueType(value1.Text)); 
+            AddToDictionary(dataDictionary, key1.Text, DetermineValueType(value1.Text));
             AddToDictionary(dataDictionary, key2.Text, DetermineValueType(value2.Text));
             AddToDictionary(dataDictionary, key3.Text, DetermineValueType(value3.Text));
 
@@ -144,12 +144,13 @@ namespace JSON_Mini_Program
             else if (dict[key] is List<object> existingList) // if the key existed and the value is a list, then it will create a list called existingList which directly reflects to the original Dictionary
             {
                 // any changes made to the existingList will directly change the original dictionary
-                existingList.Add(value); 
-            } else
+                existingList.Add(value);
+            }
+            else
             {
                 // if the key existed and the value is not a list
                 var existingVal = dict[key]; // assign the value to a new variable
-                dict[key] = new List<object> {existingVal, value}; // create a new list and at the same time add the old and new value
+                dict[key] = new List<object> { existingVal, value }; // create a new list and at the same time add the old and new value
             }
         }
 
@@ -166,7 +167,7 @@ namespace JSON_Mini_Program
                 List<object> newList = new List<object>();
 
                 // split every array item that is separated by comma, and remove the whitespace, then put them into an array
-                string[] arr = input.Split(',').Select(x => x.Trim()).ToArray(); 
+                string[] arr = input.Split(',').Select(x => x.Trim()).ToArray();
                 foreach (var item in arr)
                 {
                     var newItem = DetermineValueType(item);
@@ -257,7 +258,7 @@ namespace JSON_Mini_Program
 
             xmlDoc.LoadXml(File.ReadAllText(xmlToTxtBtn.Tag as string)); // read all xml content in the file to be converted into a xml document
 
-            string textForXml = ConvertXMLToText(xmlDoc); 
+            string textForXml = ConvertXMLToText(xmlDoc);
 
             resultFromImportXml.Text = textForXml;
         }
@@ -303,7 +304,7 @@ namespace JSON_Mini_Program
         {
             if (jsonToXmlBtn.Tag == null || string.IsNullOrEmpty(jsonToXmlBtn.Tag as string))
             {
-                resultFromImportJson.Text = "No JSON file is selected or File is empty"; 
+                resultFromImportJson.Text = "No JSON file is selected or File is empty";
                 return;
             }
 
@@ -423,7 +424,7 @@ namespace JSON_Mini_Program
 
         private void picBoxJson_DragDrop(object sender, DragEventArgs e)
         {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop); 
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
 
             if (files.Length == 1)
             {
@@ -459,5 +460,6 @@ namespace JSON_Mini_Program
                 e.Effect = DragDropEffects.None;
             }
         }
+
     }
 }

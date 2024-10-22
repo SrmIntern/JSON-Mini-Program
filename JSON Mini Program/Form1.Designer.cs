@@ -420,7 +420,7 @@
             Controls.Add(serializeButton);
             Controls.Add(deserializeButton);
             Name = "Form1";
-            Text = "Form1";
+            Text = "JSON Mini Program";
             ((System.ComponentModel.ISupportInitialize)picBoxXml).EndInit();
             ((System.ComponentModel.ISupportInitialize)picBoxJson).EndInit();
             ResumeLayout(false);

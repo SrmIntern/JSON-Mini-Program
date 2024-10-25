@@ -1,9 +1,12 @@
 using Newtonsoft.Json;
+using System;
 using System.ComponentModel.Design;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
+using System.Xml.Serialization;
 
 namespace JSON_Mini_Program
 {
@@ -25,83 +28,121 @@ namespace JSON_Mini_Program
             picBoxJson.DragDrop += picBoxJson_DragDrop;
         }
 
+        private string GenerateNewFilePath(string oriFilePath)
+        {
+            string dir = Path.GetDirectoryName(oriFilePath);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(oriFilePath);
+            string extension = Path.GetExtension(oriFilePath);
+
+            string newFilePath = oriFilePath;
+            int counter = 1;
+
+            while (File.Exists(newFilePath))
+            {
+                newFilePath = Path.Combine(dir, $"{fileNameWithoutExtension}({counter}){extension}"); // create new file path if file exists in directory
+                counter++;
+            }
+
+            return newFilePath;
+        }
+
         private void deserializeButton_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(jsonTxtBox.Text))
             {
                 resultInPlaintext.Text = "Please insert JSON.";
             }
-            else
+
+            try
             {
-                resultInPlaintext.Text = ConvertJSONToText(jsonTxtBox.Text);
+                string convertedTxt = ConvertJSONToText(jsonTxtBox.Text);
+
+                resultInPlaintext.Text = convertedTxt; // write the string into the textbox
+
+                string txtFilePath = @"C:\Users\user\Downloads\jsonToText.txt"; // create file path
+
+                File.WriteAllText(GenerateNewFilePath(txtFilePath), convertedTxt); // write the converted text into a .txt file
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                MessageBox.Show($"Please enter valid JSON. The error says: \n{ex.Message}", "Invalid JSON format", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private string ConvertJSONToText(string jsonContent)
         {
-            var plainTextDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonContent);
+            Dictionary<string, JsonElement> plainTextDict = new Dictionary<string, JsonElement>();
+
+            // system.text.json library is written in front due to ambiguous JsonSerializer with Newtonsoft.Json JsonSerializer
+            plainTextDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonContent);
 
             return DetermineValueKind(plainTextDict);
         }
 
-        private string DetermineValueKind(Dictionary<string, JsonElement> plainTextDict)
+        private string DetermineValueKind(Dictionary<string, JsonElement> plainTextDict, int indentLevel = 0)
         {
             // create stringbuilder to combine all strings into one
             var result = new StringBuilder();
+            string indent = new string(' ', indentLevel * 4); // 4 spaces per indentation level
 
             foreach (var kvp in plainTextDict)
             {
-                result.Append($"{kvp.Key}: "); // output "Key:  " without entering new line
+                result.Append($"{indent}{kvp.Key}: "); // output "Key: " with indentation
                 switch (kvp.Value.ValueKind)
                 {
                     case JsonValueKind.Number: // if the value is a number, then assign the value as number in JSON
                         result.AppendLine($"{kvp.Value.GetDecimal()}"); // output "Key: 20" and enters new line
                         break;
                     case JsonValueKind.Null: // if the value is null, then output string "null"
-                        result.AppendLine("null");
+                        result.AppendLine($"{indent}null");
                         break;
                     case JsonValueKind.Array:
-                        int arrayLength = kvp.Value.GetArrayLength();
                         int index = 0;
                         foreach (var item in kvp.Value.EnumerateArray())
                         {
                             // if the one of the array item's value is an object, need further deserialization (since it is a nested JSON)
                             if (item.ValueKind == JsonValueKind.Object)
                             {
+                                result.AppendLine(""); // enter new line
                                 var arrNested = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(item);
-                                result.AppendLine("");
-                                result.Append(DetermineValueKind(arrNested)); // after deserialized, determine the type of that value
-                            }
-                            else if (index == arrayLength - 1) // if it is the last item in the array
-                            {
-                                result.AppendLine($"{item}");
-                            }
-                            else if (item.ValueKind == JsonValueKind.Null && index != arrayLength - 1) // if the nested JSON's value is null and not the last item of array
-                            {
-                                result.AppendLine("null,");
-                            }
-                            else if (item.ValueKind == JsonValueKind.Null && index == arrayLength - 1) // if the nested JSON's value is null and is the last item of array
-                            {
-                                result.AppendLine("null");
+                                result.Append(DetermineValueKind(arrNested, indentLevel + 1)); // Increase indent level for nested objects
                             }
                             else
                             {
-                                result.Append($"{item}, "); // comma use to separate each array items
+                                result.Append($"{item}"); // Indent for array items
+                            }
+
+                            if (index < kvp.Value.GetArrayLength() - 1) // if it is the last item in the array
+                            {
+                                result.Append(", "); // Add a comma for items that aren't the last
+                            }
+                            else
+                            {
+                                result.AppendLine(); // New line for the last item
+                            }
+
+                            if (item.ValueKind == JsonValueKind.Null && index != kvp.Value.GetArrayLength() - 1) // if the nested JSON's value is null and not the last item of array
+                            {
+                                result.AppendLine($"{indent}null,");
+                            }
+                            else
+                            {
+                                result.AppendLine($"{indent}null");
                             }
                             index++;
                         }
                         break;
-                    case JsonValueKind.Object: // if value is an object/nested JSON, then deserialize it then determine the nested value's type
-                        var nestedJson = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(kvp.Value);
+                    case JsonValueKind.Object:  // if value is an object/nested JSON, then deserialize it then determine the nested value's type
                         result.AppendLine("");
-                        result.Append(DetermineValueKind(nestedJson));
+                        var nestedJson = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(kvp.Value);
+                        result.Append(DetermineValueKind(nestedJson, indentLevel + 1)); // Increase indent level for nested objects
                         break;
                     case JsonValueKind.True:
                     case JsonValueKind.False: // if the value is written true or false, convert the value to boolean type
                         result.AppendLine($"{kvp.Value.GetBoolean()}");
                         break;
                     default:
-                        result.AppendLine(kvp.Value.GetString()); // else return string
+                        result.AppendLine($"{kvp.Value.GetString()}");
                         break;
                 }
             }
@@ -113,7 +154,7 @@ namespace JSON_Mini_Program
         {
             if (string.IsNullOrEmpty(key1.Text) || string.IsNullOrEmpty(key2.Text) || string.IsNullOrEmpty(key3.Text))
             {
-                resultInJson.Text = "Please fill in all the details.";
+                resultInJson.Text = "Please fill in all the details ESPECIALLY the KEY.";
                 return;
             }
 
@@ -133,6 +174,10 @@ namespace JSON_Mini_Program
             string json = System.Text.Json.JsonSerializer.Serialize(dataDictionary, options); // convert into JSON
 
             resultInJson.Text = json; // output to the textbox
+
+            string jsonFilePath = @"C:\Users\user\Downloads\textToJson.json"; // create file path
+
+            File.WriteAllText(GenerateNewFilePath(jsonFilePath), json);
         }
 
         private void AddToDictionary(Dictionary<string, object> dict, string key, object value)
@@ -141,7 +186,8 @@ namespace JSON_Mini_Program
             {
                 dict[key] = value; // assign the value directly to the key
             }
-            else if (dict[key] is List<object> existingList) // if the key existed and the value is a list, then it will create a list called existingList which directly reflects to the original Dictionary
+            else if (dict[key] is List<object> existingList) // if the key existed and the value is a list, then it will create a list called existingList
+                                                             // which directly reflects to the original Dictionary
             {
                 // any changes made to the existingList will directly change the original dictionary
                 existingList.Add(value);
@@ -171,7 +217,7 @@ namespace JSON_Mini_Program
                 foreach (var item in arr)
                 {
                     var newItem = DetermineValueType(item);
-                    newList.Add(newItem);
+                       newList.Add(newItem);
                     // add into a new array to be returned
                 }
                 // return new array
@@ -223,13 +269,24 @@ namespace JSON_Mini_Program
                 return;
             }
 
-            string xmlContent = File.ReadAllText(xmlToJsonBtn.Tag as string); // everything inside the file selected that is stored in the button
+            try
+            {
+                string xmlContent = File.ReadAllText(xmlToJsonBtn.Tag as string); // everything inside the file selected that is stored in the button
 
-            resultFromImportXml.Text = ConvertXMLToJSON(xmlContent);
+                string convertedJson = ConvertXMLToJSON(xmlContent);
 
-            string jsonFilePath = @"C:\Users\user\Downloads\" + Path.GetFileNameWithoutExtension(xmlToJsonBtn.Tag as string) + ".json"; // create file path
+                resultFromImportXml.Text = convertedJson;
 
-            File.WriteAllText(jsonFilePath, ConvertXMLToJSON(xmlContent)); // write the converted code into the file
+                string jsonFilePath = @"C:\Users\user\Downloads\" + Path.GetFileNameWithoutExtension(xmlToJsonBtn.Tag as string) + ".json"; // create file path
+
+                File.WriteAllText(GenerateNewFilePath(jsonFilePath), convertedJson); // write the converted code into the file
+            }
+            catch (XmlException ex)
+            {
+                MessageBox.Show($"Please import valid XML file. The error says: \n{ex.Message}", "Invalid XML file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                resetXmlFile_Click(sender, e);
+            }
         }
 
         private string ConvertXMLToJSON(string xmlContent)
@@ -254,13 +311,26 @@ namespace JSON_Mini_Program
                 return;
             }
 
-            XmlDocument xmlDoc = new XmlDocument();
+            try
+            {
+                XmlDocument xmlDoc = new XmlDocument();
 
-            xmlDoc.LoadXml(File.ReadAllText(xmlToTxtBtn.Tag as string)); // read all xml content in the file to be converted into a xml document
+                xmlDoc.LoadXml(File.ReadAllText(xmlToTxtBtn.Tag as string)); // read all xml content in the file to be converted into a xml document
 
-            string textForXml = ConvertXMLToText(xmlDoc);
+                string textForXml = ConvertXMLToText(xmlDoc);
 
-            resultFromImportXml.Text = textForXml;
+                resultFromImportXml.Text = textForXml;
+
+                string xmlToTxtFilePath = @"C:\Users\user\Downloads\" + Path.GetFileNameWithoutExtension(xmlToTxtBtn.Tag as string) + "(From XML).txt"; // create new file path
+
+                File.WriteAllText(GenerateNewFilePath(xmlToTxtFilePath), textForXml); // write the xml string into the file
+            }
+            catch (XmlException ex)
+            {
+                MessageBox.Show($"Please import valid XML file. The error says: \n{ex.Message}", "Invalid XML file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                resetXmlFile_Click(sender, e);
+            }
         }
 
         private string ConvertXMLToText(XmlDocument xmlDoc)
@@ -269,11 +339,11 @@ namespace JSON_Mini_Program
 
             foreach (XmlNode node in xmlDoc.DocumentElement.ChildNodes)
             {
-                result += $"{node.Name}:\n"; // in the new line, write the child node of the root tag then iterate
+                result += $"    {node.Name}:\n"; // in the new line, write the child node of the root tag then iterate
 
                 foreach (XmlNode childNode in node.ChildNodes)
                 {
-                    result += $"{childNode.Name} : {childNode.InnerText}\n"; // then write the child node of the parent node with key and value together
+                    result += $"        {childNode.Name} : {childNode.InnerText}\n"; // then write the child node of the parent node with key and value together
                 }
             }
             return result.Trim(); // return result with whitespace-free
@@ -308,22 +378,34 @@ namespace JSON_Mini_Program
                 return;
             }
 
-            string jsonContent = File.ReadAllText(jsonToXmlBtn.Tag as string); // read all details in the file and stored it in a string
+            try
+            {
+                string jsonContent = File.ReadAllText(jsonToXmlBtn.Tag as string); // read all details in the file and stored it in a string
 
-            resultFromImportJson.Text = ConvertJSONToXML(jsonContent);
+                string convertedXml = ConvertJSONToXML(jsonContent);
 
-            string xmlFilePath = @"C:\Users\user\Downloads\" + Path.GetFileNameWithoutExtension(jsonToXmlBtn.Tag as string) + ".xml"; // create new file path
+                resultFromImportJson.Text = convertedXml;
 
-            File.WriteAllText(xmlFilePath, ConvertJSONToXML(jsonContent)); // write the xml string into the file
+                string xmlFilePath = @"C:\Users\user\Downloads\" + Path.GetFileNameWithoutExtension(jsonToXmlBtn.Tag as string) + ".xml"; // create new file path
+
+                File.WriteAllText(GenerateNewFilePath(xmlFilePath), convertedXml); // write the xml string into the file
+            }
+            catch (JsonReaderException ex)
+            {
+                MessageBox.Show($"Please import valid JSON file. The error says: \n{ex.Message}", "Invalid JSON file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                resetJsonFile_Click(sender, e);
+            }
         }
 
         private string ConvertJSONToXML(string jsonContent)
         {
+            // Use StringWriter to capture the XML output
+            var stringWriter = new StringWriter();
+
             // Deserialize JSON to XML
             XmlDocument xmlDoc = JsonConvert.DeserializeXmlNode(jsonContent);
 
-            // Use StringWriter to capture the XML output
-            var stringWriter = new StringWriter();
             var xmlWriterSettings = new XmlWriterSettings
             {
                 Indent = true,
@@ -348,9 +430,24 @@ namespace JSON_Mini_Program
                 return;
             }
 
-            string jsonContent = File.ReadAllText(jsonToTxtBtn.Tag as string); // read all info in the file and then stored in a string
+            try
+            {
+                string jsonContent = File.ReadAllText(jsonToTxtBtn.Tag as string); // read all info in the file and then stored in a string
 
-            resultFromImportJson.Text = ConvertJSONToText(jsonContent);
+                string convertedTxt = ConvertJSONToText(jsonContent);
+
+                resultFromImportJson.Text = convertedTxt;
+
+                string jsonToTxtBtnFilePath = @"C:\Users\user\Downloads\" + Path.GetFileNameWithoutExtension(jsonToTxtBtn.Tag as string) + "(From JSON).txt";
+
+                File.WriteAllText(GenerateNewFilePath(jsonToTxtBtnFilePath), convertedTxt);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                MessageBox.Show($"Please import valid JSON file. The error says: \n{ex.Message}", "Invalid JSON file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                resetJsonFile_Click(sender, e);
+            }
         }
 
         private void resetJsonText_Click(object sender, EventArgs e)
@@ -460,6 +557,5 @@ namespace JSON_Mini_Program
                 e.Effect = DragDropEffects.None;
             }
         }
-
     }
 }

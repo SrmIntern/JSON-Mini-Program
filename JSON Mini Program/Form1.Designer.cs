@@ -62,6 +62,9 @@
             resetPlaintext = new Button();
             resetXmlFile = new Button();
             resetJsonFile = new Button();
+            label8 = new Label();
+            label11 = new Label();
+            label12 = new Label();
             ((System.ComponentModel.ISupportInitialize)picBoxXml).BeginInit();
             ((System.ComponentModel.ISupportInitialize)picBoxJson).BeginInit();
             SuspendLayout();
@@ -117,18 +120,18 @@
             resultInJson.Location = new Point(761, 304);
             resultInJson.Name = "resultInJson";
             resultInJson.ReadOnly = true;
-            resultInJson.Size = new Size(341, 189);
+            resultInJson.Size = new Size(341, 185);
             resultInJson.TabIndex = 6;
             resultInJson.Text = "";
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(88, 266);
+            label3.Location = new Point(88, 261);
             label3.Name = "label3";
-            label3.Size = new Size(185, 20);
+            label3.Size = new Size(156, 20);
             label3.TabIndex = 8;
-            label3.Text = "Please fill in with plaintext:";
+            label3.Text = "Please fill in with text: ";
             // 
             // label4
             // 
@@ -141,21 +144,21 @@
             // 
             // key1
             // 
-            key1.Location = new Point(88, 315);
+            key1.Location = new Point(89, 366);
             key1.Name = "key1";
             key1.Size = new Size(125, 27);
             key1.TabIndex = 10;
             // 
             // key2
             // 
-            key2.Location = new Point(88, 380);
+            key2.Location = new Point(89, 414);
             key2.Name = "key2";
             key2.Size = new Size(125, 27);
             key2.TabIndex = 11;
             // 
             // key3
             // 
-            key3.Location = new Point(88, 451);
+            key3.Location = new Point(89, 462);
             key3.Name = "key3";
             key3.Size = new Size(125, 27);
             key3.TabIndex = 12;
@@ -163,7 +166,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(228, 318);
+            label5.Location = new Point(229, 369);
             label5.Name = "label5";
             label5.Size = new Size(12, 20);
             label5.TabIndex = 13;
@@ -172,7 +175,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(228, 383);
+            label6.Location = new Point(229, 417);
             label6.Name = "label6";
             label6.Size = new Size(12, 20);
             label6.TabIndex = 14;
@@ -181,7 +184,7 @@
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new Point(228, 454);
+            label7.Location = new Point(229, 465);
             label7.Name = "label7";
             label7.Size = new Size(12, 20);
             label7.TabIndex = 15;
@@ -189,21 +192,21 @@
             // 
             // value1
             // 
-            value1.Location = new Point(262, 315);
+            value1.Location = new Point(263, 366);
             value1.Name = "value1";
             value1.Size = new Size(125, 27);
             value1.TabIndex = 16;
             // 
             // value2
             // 
-            value2.Location = new Point(262, 380);
+            value2.Location = new Point(263, 414);
             value2.Name = "value2";
             value2.Size = new Size(125, 27);
             value2.TabIndex = 17;
             // 
             // value3
             // 
-            value3.Location = new Point(262, 451);
+            value3.Location = new Point(263, 461);
             value3.Name = "value3";
             value3.Size = new Size(125, 27);
             value3.TabIndex = 18;
@@ -379,12 +382,41 @@
             resetJsonFile.UseVisualStyleBackColor = true;
             resetJsonFile.Click += resetJsonFile_Click;
             // 
+            // label8
+            // 
+            label8.Location = new Point(88, 281);
+            label8.Name = "label8";
+            label8.Size = new Size(374, 40);
+            label8.TabIndex = 37;
+            label8.Text = "(Note that: If you input duplicate keys, it will combine their values into an array.)";
+            // 
+            // label11
+            // 
+            label11.AutoSize = true;
+            label11.Location = new Point(140, 343);
+            label11.Name = "label11";
+            label11.Size = new Size(33, 20);
+            label11.TabIndex = 38;
+            label11.Text = "Key";
+            // 
+            // label12
+            // 
+            label12.AutoSize = true;
+            label12.Location = new Point(305, 343);
+            label12.Name = "label12";
+            label12.Size = new Size(45, 20);
+            label12.TabIndex = 39;
+            label12.Text = "Value";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoScroll = true;
             ClientSize = new Size(1240, 1055);
+            Controls.Add(label12);
+            Controls.Add(label11);
+            Controls.Add(label8);
             Controls.Add(resetJsonFile);
             Controls.Add(resetXmlFile);
             Controls.Add(resetPlaintext);
@@ -463,5 +495,8 @@
         private Button resetPlaintext;
         private Button resetXmlFile;
         private Button resetJsonFile;
+        private Label label8;
+        private Label label11;
+        private Label label12;
     }
 }
